@@ -26,6 +26,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 import time
+import os
 
 import smtplib
 from email.mime.text import MIMEText
@@ -92,19 +93,23 @@ def check_tables(database_name, table_list, current_timestamp):
     return result_flag, result_list
 
 
-if __name__ == '__main__':
+def check_status():
     timestamp = time.time()
 
-    result = [0]
+    status = [0]
 
     for database in database_info.database_list:
         flag, list = check_tables(database, database_info.table_list[database], timestamp)
 
         if flag == 1:
-            result[0] = 1
+            status[0] = 1
 
-        result.append({'name': database, 'flag': flag, 'list': list})
+        status.append({'name': database, 'flag': flag, 'list': list})
 
+    return status
+
+
+def assemble_message(result):
     message = '- Dropper API Data Report -\n\n\n'
     for data in result[1:]:
         message += f"[{data['name']}] {'RED' if data['flag'] else 'GREEN'} - {len(data['list'])}\n"
@@ -117,9 +122,32 @@ if __name__ == '__main__':
 
         message += '\n'
 
+    return message
+
+
+def autofix():
+    os.system('python3.6 status_crawler.py ; python3.6 foreign_crawler.py ; python3.6 patient_crawler.py')
+
+
+if __name__ == '__main__':
+    result = check_status()
+    message = assemble_message(result)
+
     if result[0] == 0:
-        send_mail(subject='[Dropper API] Data has been updated successfully',
+        send_mail(subject='[Dropper API] Data update has been finished successfully',
                   message=message)
     else:
-        send_mail(subject='[Dropper API] There is a problem with the data update',
+        send_mail(subject='[Dropper API] Data update has been failed',
                   message=message)
+
+        autofix()
+
+        result = check_status()
+        message = assemble_message(result)
+
+        if result[0] == 0:
+            send_mail(subject='[Dropper API] Autofix has been finished successfully',
+                      message=message)
+        else:
+            send_mail(subject='[Dropper API] Autofix has been failed',
+                      message=message)
