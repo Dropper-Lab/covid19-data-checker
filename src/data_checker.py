@@ -107,7 +107,15 @@ if __name__ == '__main__':
 
     message = '- Dropper API Data Report -\n\n\n'
     for data in result[1:]:
-        message += f"[{data['name']}] {'RED' if data['flag'] else 'GREEN'} - {data['list']}\n"
+        message += f"[{data['name']}] {'RED' if data['flag'] else 'GREEN'} - {len(data['list'])}\n"
+
+        if data['flag']:
+            message += '---------------------------\n'
+            for table in data['list']:
+                message += f"{table}\n"
+            message += '---------------------------\n'
+
+        message += '\n'
 
     if result[0] == 0:
         send_mail(subject='[Dropper API] Data has been updated successfully',
