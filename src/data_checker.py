@@ -7,6 +7,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 import pymysql
+
 import mail_property
 import mysql_property
 import database_info
