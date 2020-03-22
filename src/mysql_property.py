@@ -1,0 +1,4 @@
+hostname =
+user =
+password =
+charset =
