@@ -80,8 +80,23 @@ def check_tables(database_name, table_list, current_timestamp):
     result_list = []
 
     for table in table_list:
-        cursor.execute(f"select * from  {table} order by timestamp desc limit 0, 1;")
-        previous_timestamp = cursor.fetchone()['timestamp']
+
+        try:
+            cursor.execute(f"select * from  {table} order by timestamp desc limit 0, 1;")
+            previous_timestamp = cursor.fetchone()['timestamp']
+        except Exception as ex:
+            previous_timestamp = 0
+
+            report_message = '- Dropper API Data Checker Report -\n\n\n'
+            report_message += '---------------------------\n'
+            report_message += str(ex)
+            report_message += '---------------------------\n'
+            report_message += '\n'
+            report_message += '\nThis report is about ' + str(database_name) + ':' + str(table)
+            report_message += '\nThis report is based on (Unix Time)' + str(int(current_timestamp))
+            send_mail(subject='[Dropper API] An error has occurred while getting timestamp',
+                      message=report_message)
+
         if -check_timestamp(current_timestamp, previous_timestamp, 3600):
             result_flag = 1
             result_list.append(table)
@@ -93,13 +108,11 @@ def check_tables(database_name, table_list, current_timestamp):
     return result_flag, result_list
 
 
-def check_status():
-    timestamp = time.time()
-
+def check_status(current_timestamp):
     status = [0]
 
     for database in database_info.database_list:
-        flag, list = check_tables(database, database_info.table_list[database], timestamp)
+        flag, list = check_tables(database, database_info.table_list[database], current_timestamp)
 
         if flag == 1:
             status[0] = 1
@@ -109,20 +122,21 @@ def check_status():
     return status
 
 
-def assemble_message(result):
-    message = '- Dropper API Data Report -\n\n\n'
+def assemble_message(result, current_timestamp):
+    assembled_message = '- Dropper API Data Report -\n\n\n'
     for data in result[1:]:
-        message += f"[{data['name']}] {'RED' if data['flag'] else 'GREEN'} - {len(data['list'])}\n"
+        assembled_message += f"[{data['name']}] {'RED' if data['flag'] else 'GREEN'} - {len(data['list'])}\n"
 
         if data['flag']:
-            message += '---------------------------\n'
+            assembled_message += '---------------------------\n'
             for table in data['list']:
-                message += f"{table}\n"
-            message += '---------------------------\n'
+                assembled_message += f"{table}\n"
+            assembled_message += '---------------------------\n'
 
-        message += '\n'
+        assembled_message += '\n'
 
-    return message
+    assembled_message += '\nThis report is based on (Unix Time)' + str(int(current_timestamp))
+    return assembled_message
 
 
 def autofix():
@@ -130,8 +144,9 @@ def autofix():
 
 
 if __name__ == '__main__':
-    result = check_status()
-    message = assemble_message(result)
+    timestamp = time.time()
+    result = check_status(timestamp)
+    message = assemble_message(result, timestamp)
 
     if result[0] == 0:
         send_mail(subject='[Dropper API] Data update has been finished successfully',
@@ -142,8 +157,9 @@ if __name__ == '__main__':
 
         autofix()
 
-        result = check_status()
-        message = assemble_message(result)
+        timestamp = time.time()
+        result = check_status(timestamp)
+        message = assemble_message(result, timestamp)
 
         if result[0] == 0:
             send_mail(subject='[Dropper API] Autofix has been finished successfully',
