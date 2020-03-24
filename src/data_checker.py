@@ -33,9 +33,9 @@ from email.mime.text import MIMEText
 
 import pymysql
 
-import mail_property
 import mysql_property
 import database_info
+import mail_sender
 
 logging.Formatter.converter = time.gmtime
 logger = logging.getLogger(__name__)
@@ -44,20 +44,6 @@ fileHandler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] [%(filen
 logger.addHandler(fileHandler)
 logger.setLevel(logging.INFO)
 logger.info('every package loaded and start logging')
-
-
-def send_mail(origin=mail_property.mail_address, target=mail_property.mail_address, subject='', message=''):
-    smtp = smtplib.SMTP_SSL(mail_property.address, mail_property.port)
-    smtp.ehlo()
-    smtp.login(mail_property.username, mail_property.password)
-
-    msg = MIMEText(message)
-    msg['Subject'] = subject
-    msg['From'] = origin
-    msg['To'] = target
-    smtp.sendmail(origin, target, msg.as_string())
-
-    smtp.quit()
 
 
 def check_timestamp(timestamp_1, timestamp_2, error_range):
@@ -88,13 +74,11 @@ def check_tables(database_name, table_list, current_timestamp):
             previous_timestamp = 0
 
             report_message = '- Dropper API Data Checker Report -\n\n\n'
-            report_message += '---------------------------\n'
-            report_message += str(ex)
-            report_message += '---------------------------\n'
+            report_message += str(ex) + '\n'
             report_message += '\n'
             report_message += '\nThis report is about ' + str(database_name) + ':' + str(table)
             report_message += '\nThis report is based on (Unix Time)' + str(int(current_timestamp))
-            send_mail(subject='[Dropper API] An error has occurred while getting timestamp',
+            mail_sender.send_mail(subject='[Dropper API] An error has occurred while getting timestamp',
                       message=report_message)
 
         if -check_timestamp(current_timestamp, previous_timestamp, 3600):
@@ -149,10 +133,10 @@ if __name__ == '__main__':
     message = assemble_message(result, timestamp)
 
     if result[0] == 0:
-        send_mail(subject='[Dropper API] Data update has been finished successfully',
+        mail_sender.send_mail(subject='[Dropper API] Data update has been finished successfully',
                   message=message)
     else:
-        send_mail(subject='[Dropper API] Data update has been failed',
+        mail_sender.send_mail(subject='[Dropper API] Data update has been failed',
                   message=message)
 
         autofix()
@@ -162,8 +146,8 @@ if __name__ == '__main__':
         message = assemble_message(result, timestamp)
 
         if result[0] == 0:
-            send_mail(subject='[Dropper API] Autofix has been finished successfully',
+            mail_sender.send_mail(subject='[Dropper API] Autofix has been finished successfully',
                       message=message)
         else:
-            send_mail(subject='[Dropper API] Autofix has been failed',
+            mail_sender.send_mail(subject='[Dropper API] Autofix has been failed',
                       message=message)
