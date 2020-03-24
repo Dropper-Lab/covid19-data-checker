@@ -78,7 +78,7 @@ def check_tables(database_name, table_list, current_timestamp):
             report_message += '\n'
             report_message += '\nThis report is about ' + str(database_name) + ':' + str(table)
             report_message += '\nThis report is based on (Unix Time)' + str(int(current_timestamp))
-            mail_sender.send_mail(subject='[Dropper API] An error has occurred while getting timestamp',
+            mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: An error has occurred while getting timestamp',
                       message=report_message)
 
         if -check_timestamp(current_timestamp, previous_timestamp, 3600):
@@ -133,10 +133,10 @@ if __name__ == '__main__':
     message = assemble_message(result, timestamp)
 
     if result[0] == 0:
-        mail_sender.send_mail(subject='[Dropper API] Data update has been finished successfully',
+        mail_sender.send_mail(subject='[Dropper API](data_checker) INFO: Data update has been finished successfully',
                   message=message)
     else:
-        mail_sender.send_mail(subject='[Dropper API] Data update has been failed',
+        mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: Data update has been failed',
                   message=message)
 
         autofix()
@@ -146,8 +146,8 @@ if __name__ == '__main__':
         message = assemble_message(result, timestamp)
 
         if result[0] == 0:
-            mail_sender.send_mail(subject='[Dropper API] Autofix has been finished successfully',
+            mail_sender.send_mail(subject='[Dropper API](data_checker) INFO: Autofix has been finished successfully',
                       message=message)
         else:
-            mail_sender.send_mail(subject='[Dropper API] Autofix has been failed',
+            mail_sender.send_mail(subject='[Dropper API](data_checker) FATAL: Autofix has been failed',
                       message=message)
