@@ -65,6 +65,8 @@ def check_tables(database_name, table_list, current_timestamp):
     result_flag = 0
     result_list = []
 
+    table_error_list = [0]
+
     for table in table_list:
 
         try:
@@ -73,13 +75,8 @@ def check_tables(database_name, table_list, current_timestamp):
         except Exception as ex:
             previous_timestamp = 0
 
-            report_message = '- Dropper API Data Checker Report -\n\n\n'
-            report_message += str(ex) + '\n'
-            report_message += '\n'
-            report_message += '\nThis report is about ' + str(database_name) + ':' + str(table)
-            report_message += '\nThis report is based on (Unix Time)' + str(int(current_timestamp))
-            mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: An error has occurred while getting timestamp',
-                      message=report_message)
+            table_error_list[0] = 1
+            table_error_list.append([ex, database_name, table])
 
         if -check_timestamp(current_timestamp, previous_timestamp, 3600):
             result_flag = 1
@@ -89,37 +86,47 @@ def check_tables(database_name, table_list, current_timestamp):
     logger.info('checkTables: database connection closed')
 
     logger.info('checkTables: function ended | result_flag=' + str(result_flag) + ' | result_list=' + str(result_list))
-    return result_flag, result_list
+    return result_flag, result_list, table_error_list
 
 
 def check_status(current_timestamp):
     status = [0]
+    table_error_list = [0]
 
     for database in database_info.database_list:
-        flag, list = check_tables(database, database_info.table_list[database], current_timestamp)
+        flag, list, table_error_list = check_tables(database, database_info.table_list[database], current_timestamp)
 
         if flag == 1:
             status[0] = 1
 
         status.append({'name': database, 'flag': flag, 'list': list})
 
-    return status
+    return status, table_error_list
 
 
-def assemble_message(result, current_timestamp):
-    assembled_message = '- Dropper API Data Report -\n\n\n'
-    for data in result[1:]:
+def assemble_message(contents, errors, current_timestamp):
+    assembled_message = ''
+    for data in contents[1:]:
         assembled_message += f"[{data['name']}] {'RED' if data['flag'] else 'GREEN'} - {len(data['list'])}\n"
 
         if data['flag']:
-            assembled_message += '---------------------------\n'
             for table in data['list']:
+                assembled_message += '---------------------------\n'
                 assembled_message += f"{table}\n"
             assembled_message += '---------------------------\n'
 
         assembled_message += '\n'
 
+    if errors[0] == 1:
+        assembled_message += '- ERROR: cannot get timestamp from database -\n\n\n'
+        for error in convert_error_list[1:]:
+            assembled_message += '---------------------------\n'
+            assembled_message += f"{error[0]}\n\ndatabase:\n{error[1]}\n\ntable:\n{error[2]}\n"
+        assembled_message += '---------------------------\n'
+        assembled_message += '\n\n\n\n\n'
+
     assembled_message += '\nThis report is based on (Unix Time)' + str(int(current_timestamp))
+
     return assembled_message
 
 
@@ -129,25 +136,27 @@ def autofix():
 
 if __name__ == '__main__':
     timestamp = time.time()
-    result = check_status(timestamp)
-    message = assemble_message(result, timestamp)
+    result, error_list = check_status(timestamp)
+
+    message = '* Dropper API Data Report *\n\n\n'
+    message += assemble_message(result, error_list, timestamp)
 
     if result[0] == 0:
-        mail_sender.send_mail(subject='[Dropper API](data_checker) INFO: Data update has been finished successfully',
-                  message=message)
+        mail_sender.send_mail(subject='[Dropper API](data_checker) INFO: comprehensive report',
+                              message=message)
     else:
-        mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: Data update has been failed',
-                  message=message)
+        message += "\n\n\n---------EXECUTE AUTOFIX---------\n\n\n"
 
         autofix()
 
         timestamp = time.time()
-        result = check_status(timestamp)
-        message = assemble_message(result, timestamp)
+        result, error_list = check_status()
+
+        message += assemble_message(result, error_list, timestamp)
 
         if result[0] == 0:
-            mail_sender.send_mail(subject='[Dropper API](data_checker) INFO: Autofix has been finished successfully',
-                      message=message)
+            mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: comprehensive report',
+                                  message=message)
         else:
-            mail_sender.send_mail(subject='[Dropper API](data_checker) FATAL: Autofix has been failed',
-                      message=message)
+            mail_sender.send_mail(subject='[Dropper API](data_checker) FATAL: comprehensive report',
+                                  message=message)
