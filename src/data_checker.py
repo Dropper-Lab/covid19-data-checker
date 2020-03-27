@@ -150,7 +150,7 @@ if __name__ == '__main__':
         autofix()
 
         timestamp = time.time()
-        result, error_list = check_status()
+        result, error_list = check_status(timestamp)
 
         message += assemble_message(result, error_list, timestamp)
 
