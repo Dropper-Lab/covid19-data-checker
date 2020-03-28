@@ -142,7 +142,7 @@ if __name__ == '__main__':
     message += assemble_message(result, error_list, timestamp)
 
     if result[0] == 0:
-        mail_sender.send_mail(subject='[Dropper API](data_checker) INFO: comprehensive report',
+        mail_sender.send_mail(subject='[Dropper API](data_checker) INFO: task report',
                               message=message)
     else:
         message += "\n\n\n---------EXECUTE AUTOFIX---------\n\n\n"
@@ -155,8 +155,8 @@ if __name__ == '__main__':
         message += assemble_message(result, error_list, timestamp)
 
         if result[0] == 0:
-            mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: comprehensive report',
+            mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: task report',
                                   message=message)
         else:
-            mail_sender.send_mail(subject='[Dropper API](data_checker) FATAL: comprehensive report',
+            mail_sender.send_mail(subject='[Dropper API](data_checker) FATAL: task report',
                                   message=message)
