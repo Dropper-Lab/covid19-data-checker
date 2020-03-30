@@ -155,8 +155,8 @@ if __name__ == '__main__':
         message += assemble_message(result, error_list, timestamp)
 
         if result[0] == 0:
-            mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: task report',
+            mail_sender.send_mail(subject='[Dropper API](data_checker) WARN: task report',
                                   message=message)
         else:
-            mail_sender.send_mail(subject='[Dropper API](data_checker) FATAL: task report',
+            mail_sender.send_mail(subject='[Dropper API](data_checker) ERROR: task report',
                                   message=message)
