@@ -131,7 +131,7 @@ def assemble_message(contents, errors, current_timestamp):
 
 
 def autofix():
-    os.system('python3.6 status_crawler.py ; python3.6 foreign_crawler.py ; python3.6 patient_crawler.py')
+    os.system('python3.6 status_crawler.py ; python3.6 foreign_crawler.py')
 
 
 if __name__ == '__main__':
