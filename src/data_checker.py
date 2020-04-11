@@ -119,7 +119,7 @@ def assemble_message(contents, errors, current_timestamp):
 
     if errors[0] == 1:
         assembled_message += '- ERROR: cannot get timestamp from database -\n\n\n'
-        for error in convert_error_list[1:]:
+        for error in errors[1:]:
             assembled_message += '---------------------------\n'
             assembled_message += f"{error[0]}\n\ndatabase:\n{error[1]}\n\ntable:\n{error[2]}\n"
         assembled_message += '---------------------------\n'
